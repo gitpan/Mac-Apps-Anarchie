@@ -1,6 +1,6 @@
-May 4, 1997
+October 19, 1997
 
-This is Anarchie.pm 1.1, a Perl interface to Anarchie 2.01+.
+This is Anarchie.pm 1.3, a Perl interface to Anarchie 2.01+.
 
 REQUIREMENTS:
 *MacPerl 5.1.1+ (5.1.3 recommended) is REQUIRED for fixed
@@ -8,6 +8,7 @@ REQUIREMENTS:
 *Anarchie 2.01+ or a compatible version of Fetch.
 *You might have to give MacPerl an extra meg of memory, I've had some
     problems with it quitting out on me.
+*Mac::Apps::Launch is required
 
 To install it, just drop the file Anarchie.pm in the directory
 lib:Mac:Apps.  Carefully look over the pod documentation that is included

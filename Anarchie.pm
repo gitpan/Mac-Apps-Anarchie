@@ -5,7 +5,7 @@
 #  Interface to Anarchie 2.01+
 #
 #  Created:       Chris Nandor (pudge@pobox.com)         18-Mar-97
-#  Last Modified: Chris Nandor (pudge@pobox.com)         04-May-97
+#  Last Modified: Chris Nandor (pudge@pobox.com)         19-Oct-97
 #-----------------------------------------------------------------#
 package Mac::Apps::Anarchie;
 require 5.00201;
@@ -16,13 +16,12 @@ use Carp;
 @Anarchie::ISA = qw(Mac::Apps::Anarchie);
 @EXPORT = ();
 #-----------------------------------------------------------------
-$Mac::Apps::Anarchie::revision = '$Id: Anarchie.pm,v 1.1 1997/05/04 19:02 EST cnandor Exp $';
-$Mac::Apps::Anarchie::VERSION  = '1.1';
+$Mac::Apps::Anarchie::revision = '$Id: Anarchie.pm,v 1.3 1997/10/19 22:20 EDT cnandor Exp $';
+$Mac::Apps::Anarchie::VERSION  = '1.3';
 local($be) = '';
 #-----------------------------------------------------------------
 use Mac::AppleEvents;
-use Mac::Processes;
-use Mac::MoreFiles(%Application);
+use Mac::Apps::Launch;
 #=================================================================
 # Stuff
 #=================================================================
@@ -31,7 +30,7 @@ sub new {
 		showabout			=> ['abou','core'],
 #		help				=> ['help','core'], #???
 		quit				=> ['quit','aevt'],
-		close				=> ['clos','core'],
+		'close'				=> ['clos','core'],
 		closeall			=> ['Clos','core'],
 		undo				=> ['undo','core'],
 		cut					=> ['cut ','core'],
@@ -59,11 +58,11 @@ sub new {
 	my %fields3 = (
 		remove			=> 'Rmve',
 		removeURL		=> 'Rmve',
-		mkdir			=> 'MkDr',
+		'mkdir'			=> 'MkDr',
 		mkdirURL		=> 'MkDr',
 		sendcommand		=> 'SCmd',
 		sendcommandURL	=> 'SCmd',
-		index			=> 'Indx',
+		'index'			=> 'Indx',
 		indexURL		=> 'Indx',
 	);
 	my %fields4 = (
@@ -86,6 +85,7 @@ sub new {
 	my $class = ref($that) || $that;
 	bless $self, $class;
 	$self->{ArchAgent} = shift || 'Arch';
+	$self->{WAIT}      = eval('kAEWaitReply');
 	&_ArchLaunchApp($self);
 	return $self;
 }
@@ -117,7 +117,7 @@ sub AUTOLOAD {
 #-----------------------------------------------------------------
 sub DESTROY {
 	my $self = shift;
-	&_ArchFrontApp($self,$self->{ArchMainApp}) if ($self->{ArchSwitchApps} == 1 && $self->{ArchMainApp});
+	&_ArchFrontApp($self,$self->{ArchMainApp}) if ($self->{ArchSwitchApps} && $self->{ArchSwitchApps} == 1 && $self->{ArchMainApp});
 }
 #-----------------------------------------------------------------
 sub revision {
@@ -159,10 +159,20 @@ sub useagent {
 	&_ArchFrontApp($self) if ($self->{ArchSwitchApps} == 1);
 }
 #-----------------------------------------------------------------
+sub waitreply {
+	my($self,$wait) = @_;
+	if ($wait == 1) {
+		$self->{WAIT} = eval('kAEWaitReply');
+	} elsif ($wait eq '0') {
+		$self->{WAIT} = eval('kAENoReply');
+	}
+}
+#-----------------------------------------------------------------
 sub quit {
 	my($self) = shift;
 	my($be) = AEBuildAppleEvent('aevt','quit',typeApplSignature,$self->{ArchAgent},0,0,'') || croak $^E;
-	AESend($be, kAEWaitReply) || croak $^E;
+	AESend($be, kAENoReply) || croak $^E;
+	AEDisposeDesc $be;
 }
 #=================================================================
 # Main subroutines
@@ -425,21 +435,13 @@ sub _ArchBFile {
 sub _ArchLaunchApp {
 	my($self) = shift;
 	my($app) = shift || $self->{ArchAgent};
-	my(%Launch);
-	tie %Launch, LaunchParam;
-	$Launch{launchControlFlags} = launchContinue+launchNoFileFlags+launchDontSwitch;
-	$Launch{launchAppSpec}		= $Application{$app};
-	LaunchApplication(\%Launch) or croak $^E;
+	LaunchApps([$app],0);
 }
 #-----------------------------------------------------------------
 sub _ArchFrontApp {
 	my($self) = shift;
 	my($app) = shift || $self->{ArchAgent};
-	my(%Launch);
-	tie %Launch, LaunchParam;
-	$Launch{launchControlFlags} = launchContinue+launchNoFileFlags;
-	$Launch{launchAppSpec}		= $Application{$app};
-	LaunchApplication(\%Launch) or croak $^E;
+	LaunchApps([$app],1);
 }
 #-----------------------------------------------------------------
 sub _ArchError {
@@ -478,22 +480,17 @@ sub _ArchAePrint {
 	if (exists $ar{'----'}) {
 		$ar{'----'} =~ s/^Ò(.*)Ó$/$1/s;
 		$ar{'result'} = $ar{'----'};
-	}
-	if ($ar{'errn'}) {
-		$ar{'errs'} =~ s/^Ò(.*)Ó$/$1/ if (exists $ar{'errs'});
-		carp "Anarchie error $ar{'errn'}: $ar{'errs'}\n";
-	}
-	if (exists $ar{'outp'}) {
-		$ar{'outp'} =~ s/^\[alis\(\Ç(.*?)\È\)\]/$1/;
-#		$ar{'outp'} = (pack("H*",$ar{'outp'}));
+		carp "Anarchie error: $ar{'----'}" if ($ar{'----'} < 0);
 	}
 	$self->{results} = \%ar;
+	AEDisposeDesc $rp;
 	return $ar{result};
 }
 #-----------------------------------------------------------------
 sub _ArchAeProcess {
 	my($self) = shift;
-	my($rp) = AESend($be, kAEWaitReply) || croak $^E;
+	my($rp) = AESend($be, $self->{WAIT}) || croak $^E;
+	AEDisposeDesc $be;
 	return &_ArchAePrint($self,$rp);
 }
 #-----------------------------------------------------------------#
@@ -512,6 +509,8 @@ Mac::Apps::Anarchie - Interface to Anarchie 2.01+
 =head1 DESCRIPTION
 
 This is a MacPerl interface to the popular MacOS shareware FTP/archie client, Anarchie.  For more info, see the Anarchie documentation.
+
+Also required is the Mac::Apps::Launch module.
 
 =head1 USAGE
 
@@ -555,6 +554,12 @@ Also, the host, username, password, proxy firewall and socks firewall can be pre
 	$ftp->socks(SOCKS);
 
 =over
+
+=item waitreply
+
+	$ftp->waitreply(BOOLEAN);
+
+If you don't want MacPerl to wait for Anarchie to finish what it is doing, then call this with the value 0.  You can change it back to 1 if you do want it to wait.  The initial setting is 1.
 
 =item fetch *
 
@@ -655,6 +660,14 @@ $ftp->geturl(URL [, FILENAME]);
 
 =over
 
+=item v.1.3, October 15, 1997
+
+Added C<waitreply> method.  Fixed error catching.  Erorrs still are not descriptive, but now they are reported.  :-)
+
+=item v.1.2, October 13, 1997
+
+Get app launching from Mac::Apps::Launch, fixed descriptor disposing.
+
 =item v.1.1 May 4, 1997
 
 Whoops, fixed something I broke in the AEPutParamDesc stuff.
@@ -691,7 +704,7 @@ http://www.stairways.com/anarchie/index.html
 
 =head1 AUTHOR / COPYRIGHT
 
-Chris Nandor, 04-May-1997
+Chris Nandor, 19-Oct-1997
 
 	mailto:pudge@pobox.com
 	http://pudge.net/
