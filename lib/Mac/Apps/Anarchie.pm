@@ -1,27 +1,17 @@
 #!perl -w
-#-----------------------------------------------------------------#
-#  Anarchie.pm
-#  pudge
-#  Interface to Anarchie 2.01+
-#
-#  Created:       Chris Nandor (pudge@pobox.com)         18-Mar-97
-#  Last Modified: Chris Nandor (pudge@pobox.com)         19-Oct-97
-#-----------------------------------------------------------------#
 package Mac::Apps::Anarchie;
-require 5.00201;
+require 5.004;
+use vars qw($VERSION $be @ISA @EXPORT $AUTOLOAD);
+use strict;
+use AutoLoader;
 use Exporter;
 use Carp;
-#-----------------------------------------------------------------
-@ISA = qw(Exporter);
-@Anarchie::ISA = qw(Mac::Apps::Anarchie);
-@EXPORT = ();
-#-----------------------------------------------------------------
-$Mac::Apps::Anarchie::revision = '$Id: Anarchie.pm,v 1.3 1997/10/19 22:20 EDT cnandor Exp $';
-$Mac::Apps::Anarchie::VERSION  = '1.3';
-local($be) = '';
-#-----------------------------------------------------------------
 use Mac::AppleEvents;
 use Mac::Apps::Launch;
+@ISA = qw(Exporter);
+@EXPORT = ();
+$VERSION = sprintf("%d.%02d", q$Revision: 1.50 $ =~ /(\d+)\.(\d+)/);
+
 #=================================================================
 # Stuff
 #=================================================================
@@ -111,21 +101,15 @@ sub AUTOLOAD {
 		if ($name =~ /URL$/) {&_doListFuncURL($self,$self->{$name},@_)}
 		else {&_doListFunc($self,$self->{$name},@_)}
 	} else {
-		croak "Can't access '$name' field in object of class $type\n";
+		$AutoLoader::AUTOLOAD = $AUTOLOAD;
+		&AutoLoader::AUTOLOAD($self,@_) || 
+			croak "Can't access '$name' field in object of class $type\n";
 	}
 }
 #-----------------------------------------------------------------
 sub DESTROY {
 	my $self = shift;
 	&_ArchFrontApp($self,$self->{ArchMainApp}) if ($self->{ArchSwitchApps} && $self->{ArchSwitchApps} == 1 && $self->{ArchMainApp});
-}
-#-----------------------------------------------------------------
-sub revision {
-	return $revision;
-}
-#-----------------------------------------------------------------
-sub version {
-	return $VERSION;
 }
 #-----------------------------------------------------------------
 sub getresults {
@@ -177,123 +161,6 @@ sub quit {
 #=================================================================
 # Main subroutines
 #=================================================================
-sub find {
-	my(@p)	= @_;
-	$be		= &_ArchAeBuild($p[0],'Find');
-	if ($p[1])			{&_ArchBText($p[1],'----')	} else {&_ArchError('m','dObj')}
-	if ($p[2])			{&_ArchBText($p[2],'ArFS')	}
-	if ($p[3] ne '')	{&_ArchBShor($p[3],'ArFM')	}
-	if ($p[4] ne '')	{&_ArchBBool($p[4],'ArFC')	}
-	if ($p[5] ne '')	{&_ArchBKeyw($p[5],'ArFR',[0,1,2])}
-	if ($p[6])			{&_ArchBText($p[6],'ArUR')	}
-#	if (defined $p[7])	{&_ArchBBool($p[7],'ArFW')	}
-	&_ArchBBool(1,'ArFW');
-	return &_ArchAeProcess($p[0])
-}
-#-----------------------------------------------------------------
-sub macsearch {
-	my(@p)	= @_;
-	$be		= &_ArchAeBuild($p[0],'PQry');
-	if ($p[1])			{&_ArchBText($p[1],'----')	} else {&_ArchError('m','dObj')}
-	return &_ArchAeProcess($p[0])
-}
-#-----------------------------------------------------------------
-sub fetch {
-	my(@p)	= @_;
-	$be		= &_ArchAeBuild($p[0],'Ftch');
-	my($host) = $p[5] || $p[0]->{host};
-	my($user) = $p[6] || $p[0]->{user};
-	my($pass) = $p[7] || $p[0]->{pass};
-	my($fire) = $p[8] || $p[0]->{fire};
-	my($socks) = $p[9] || $p[0]->{socks};
-	if ($p[1])			{&_ArchBFile($p[1],'----')	} else {&_ArchError('m','dObj')}
-	if ($p[2])			{&_ArchBText($p[2],'FTPc')	}
-	if (defined $p[3])	{&_ArchBBool($p[3],'ArGB')	}
-	if ($p[4])			{&_ArchBText($p[4],'ArGE')	}
-	if ($host)			{&_ArchBText($host,'FTPh')	}
-	if ($user)			{&_ArchBText($user,'ArGU')	}
-	if ($pass)			{&_ArchBText($pass,'ArGp')	}
-	if ($fire)			{&_ArchBText($fire,'ArGF')	}
-	if ($socks)			{&_ArchBText($socks,'ArGS')	}
-	return &_ArchAeProcess($p[0])
-}
-#-----------------------------------------------------------------
-sub fetchURL {
-	my(@p)	= @_;
-	$be		= &_ArchAeBuild($p[0],'Ftch');
-	my($fire) = $p[5] || $p[0]->{fire};
-	my($socks) = $p[6] || $p[0]->{socks};
-	if ($p[1])			{&_ArchBFile($p[1],'----')	} else {&_ArchError('m','dObj')}
-	if ($p[2])			{&_ArchBText($p[2],'ArUR')	}
-	if (defined $p[3])	{&_ArchBBool($p[3],'ArGB')	}
-	if ($p[4])			{&_ArchBText($p[4],'ArGE')	}
-	if ($fire)			{&_ArchBText($fire,'ArGF')	}
-	if ($socks)			{&_ArchBText($socks,'ArGS')	}
-	return &_ArchAeProcess($p[0])
-}
-#-----------------------------------------------------------------
-sub store {
-	my(@p)	= @_;
-	$be		= &_ArchAeBuild($p[0],'Stor');
-	my($host) = $p[4] || $p[0]->{host};
-	my($user) = $p[5] || $p[0]->{user};
-	my($pass) = $p[6] || $p[0]->{pass};
-	my($fire) = $p[7] || $p[0]->{fire};
-	my($socks) = $p[8] || $p[0]->{socks};
-	if ($p[1])			{&_ArchBFile($p[1],'----')	} else {&_ArchError('m','dObj')}
-	if ($p[2])			{&_ArchBText($p[2],'FTPc')	}
-	if (defined $p[3])	{&_ArchBBool($p[3],'ArGB')	}
-	if ($host)			{&_ArchBText($host,'FTPh')	}
-	if ($user)			{&_ArchBText($user,'ArGU')	}
-	if ($pass)			{&_ArchBText($pass,'ArGp')	}
-	if ($fire)			{&_ArchBText($fire,'ArGF')	}
-	if ($socks)			{&_ArchBText($socks,'ArGS')	}
-	return &_ArchAeProcess($p[0])
-}
-#-----------------------------------------------------------------
-sub storeURL {
-	my(@p)	= @_;
-	$be		= &_ArchAeBuild($p[0],'Stor');
-	my($fire) = $p[4] || $p[0]->{fire};
-	my($socks) = $p[5] || $p[0]->{socks};
-	if ($p[1])			{&_ArchBFile($p[1],'----')	} else {&_ArchError('m','dObj')}
-	if ($p[2])			{&_ArchBText($p[2],'ArUR')	}
-	if (defined $p[3])	{&_ArchBBool($p[3],'ArGB')	}
-	if ($fire)			{&_ArchBText($fire,'ArGF')	}
-	if ($socks)			{&_ArchBText($socks,'ArGS')	}
-	return &_ArchAeProcess($p[0])
-}
-#-----------------------------------------------------------------
-sub rename {
-	my(@p)	= @_;
-	$be		= &_ArchAeBuild($p[0],'Rena');
-	my($host) = $p[3] || $p[0]->{host};
-	my($user) = $p[4] || $p[0]->{user};
-	my($pass) = $p[5] || $p[0]->{pass};
-	my($fire) = $p[6] || $p[0]->{fire};
-	my($socks) = $p[7] || $p[0]->{socks};
-	if ($p[1])			{&_ArchBText($p[1],'NewN')	} else {&_ArchError('m','NewN')}
-	if ($p[2])			{&_ArchBText($p[2],'FTPc')	}
-	if ($host)			{&_ArchBText($host,'FTPh')	}
-	if ($user)			{&_ArchBText($user,'ArGU')	}
-	if ($pass)			{&_ArchBText($pass,'ArGp')	}
-	if ($fire)			{&_ArchBText($fire,'ArGF')	}
-	if ($socks)			{&_ArchBText($socks,'ArGS')	}
-	return &_ArchAeProcess($p[0])
-}
-#-----------------------------------------------------------------
-sub renameURL {
-	my(@p)	= @_;
-	$be		= &_ArchAeBuild($p[0],'Rena');
-	my($fire) = $p[3] || $p[0]->{fire};
-	my($socks) = $p[4] || $p[0]->{socks};
-	if ($p[1])			{&_ArchBText($p[1],'NewN')	} else {&_ArchError('m','NewN')}
-	if ($p[2])			{&_ArchBText($p[2],'ArUR')	}
-	if ($fire)			{&_ArchBText($fire,'ArGF')	}
-	if ($socks)			{&_ArchBText($socks,'ArGS')	}
-	return &_ArchAeProcess($p[0])
-}
-#-----------------------------------------------------------------
 sub _doArchFunc {
 	my(@p)	= @_;
 	$be		= &_ArchAeBuild($p[0],$p[1]);
@@ -484,7 +351,7 @@ sub _ArchAePrint {
 	}
 	$self->{results} = \%ar;
 	AEDisposeDesc $rp;
-	return $ar{result};
+	return $ar{result} || 1;
 }
 #-----------------------------------------------------------------
 sub _ArchAeProcess {
@@ -495,7 +362,7 @@ sub _ArchAeProcess {
 }
 #-----------------------------------------------------------------#
 
-__END__
+=pod
 
 =head1 NAME
 
@@ -504,17 +371,18 @@ Mac::Apps::Anarchie - Interface to Anarchie 2.01+
 =head1 SYNOPSIS
 
 	use Mac::Apps::Anarchie;
-	$ftp = new Anarchie;
+	$ftp = new Mac::Apps::Anarchie;
+	#see description for the rest
 
 =head1 DESCRIPTION
 
 This is a MacPerl interface to the popular MacOS shareware FTP/archie client, Anarchie.  For more info, see the Anarchie documentation.
 
-Also required is the Mac::Apps::Launch module.
-
-=head1 USAGE
+Also required is the Mac::Apps::Launch module, which requires MacPerl 5.1.4r4.
 
 NOTE: for some explanations of methods, drop Anarchie on Script Editor, and check the Anarchie docs.
+
+Before using, you must autosplit the module.  See version notes for 1.4 below.
 
 =head2 Standard Suite
 
@@ -656,9 +524,24 @@ $ftp->geturl(URL [, FILENAME]);
 
 =back
 
-=head1 VERSION NOTES
+=head1 HISTORY
 
-=over
+=over 4
+
+=item v.1.4, January 3, 1998
+
+Basic cleanup.  Requires MacPerl 5.1.4r4 or better now.
+
+=item v.1.4, November 3, 1997
+
+Pulled out main functions as autosplit/autoload files.  Before using, you must run a script such as the following, in order to AutoSplit the routines:
+
+	#!perl -w
+	use AutoSplit;
+	$dir = 'HD:MacPerl:site_perl';
+	autosplit("$dir:Mac:Apps:Anarchie.pm","$dir:auto",0,1,1);
+
+This also means that the C<Mac::Apps::Anarchie> class is no longer aliased to simply C<Anarchie>.
 
 =item v.1.3, October 15, 1997
 
@@ -682,7 +565,7 @@ First 'public' beta.
 
 =back
 
-=head1 BUGS / TO DO
+=head1 BUGS
 
 =over
 
@@ -702,13 +585,138 @@ http://www.stairways.com/anarchie/index.html
 
 =back
 
-=head1 AUTHOR / COPYRIGHT
+=head1 AUTHOR
 
-Chris Nandor, 19-Oct-1997
+Chris Nandor F<E<lt>pudge@pobox.comE<gt>>
+http://pudge.net/
 
-	mailto:pudge@pobox.com
-	http://pudge.net/
+Copyright (c) 1998 Chris Nandor.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.  Please see the Perl Artistic License.
 
-Copyright (c) 1997 Chris Nandor.  All rights reserved.  This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.  Please see the Perl Artistic License.
+=head1 VERSION
+
+Version 1.50 (03 January 1998)
 
 =cut
+
+__END__
+
+#=================================================================
+# AutoLoaded Routines
+#=================================================================
+sub find {
+	my(@p)	= @_;
+	$be		= &_ArchAeBuild($p[0],'Find');
+	if ($p[1])			{&_ArchBText($p[1],'----')	} else {&_ArchError('m','dObj')}
+	if ($p[2])			{&_ArchBText($p[2],'ArFS')	}
+	if ($p[3] ne '')	{&_ArchBShor($p[3],'ArFM')	}
+	if ($p[4] ne '')	{&_ArchBBool($p[4],'ArFC')	}
+	if ($p[5] ne '')	{&_ArchBKeyw($p[5],'ArFR',[0,1,2])}
+	if ($p[6])			{&_ArchBText($p[6],'ArUR')	}
+#	if (defined $p[7])	{&_ArchBBool($p[7],'ArFW')	}
+	&_ArchBBool(1,'ArFW');
+	return &_ArchAeProcess($p[0])
+}
+#-----------------------------------------------------------------
+sub macsearch {
+	my(@p)	= @_;
+	$be		= &_ArchAeBuild($p[0],'PQry');
+	if ($p[1])			{&_ArchBText($p[1],'----')	} else {&_ArchError('m','dObj')}
+	return &_ArchAeProcess($p[0])
+}
+#-----------------------------------------------------------------
+sub fetch {
+	my(@p)	= @_;
+	$be		= &_ArchAeBuild($p[0],'Ftch');
+	my($host) = $p[5] || $p[0]->{host};
+	my($user) = $p[6] || $p[0]->{user};
+	my($pass) = $p[7] || $p[0]->{pass};
+	my($fire) = $p[8] || $p[0]->{fire};
+	my($socks) = $p[9] || $p[0]->{socks};
+	if ($p[1])			{&_ArchBFile($p[1],'----')	} else {&_ArchError('m','dObj')}
+	if ($p[2])			{&_ArchBText($p[2],'FTPc')	}
+	if (defined $p[3])	{&_ArchBBool($p[3],'ArGB')	}
+	if ($p[4])			{&_ArchBText($p[4],'ArGE')	}
+	if ($host)			{&_ArchBText($host,'FTPh')	}
+	if ($user)			{&_ArchBText($user,'ArGU')	}
+	if ($pass)			{&_ArchBText($pass,'ArGp')	}
+	if ($fire)			{&_ArchBText($fire,'ArGF')	}
+	if ($socks)			{&_ArchBText($socks,'ArGS')	}
+	return &_ArchAeProcess($p[0])
+}
+#-----------------------------------------------------------------
+sub fetchURL {
+	my(@p)	= @_;
+	$be		= &_ArchAeBuild($p[0],'Ftch');
+	my($fire) = $p[5] || $p[0]->{fire};
+	my($socks) = $p[6] || $p[0]->{socks};
+	if ($p[1])			{&_ArchBFile($p[1],'----')	} else {&_ArchError('m','dObj')}
+	if ($p[2])			{&_ArchBText($p[2],'ArUR')	}
+	if (defined $p[3])	{&_ArchBBool($p[3],'ArGB')	}
+	if ($p[4])			{&_ArchBText($p[4],'ArGE')	}
+	if ($fire)			{&_ArchBText($fire,'ArGF')	}
+	if ($socks)			{&_ArchBText($socks,'ArGS')	}
+	return &_ArchAeProcess($p[0])
+}
+#-----------------------------------------------------------------
+sub store {
+	my(@p)	= @_;
+	$be		= &_ArchAeBuild($p[0],'Stor');
+	my($host) = $p[4] || $p[0]->{host};
+	my($user) = $p[5] || $p[0]->{user};
+	my($pass) = $p[6] || $p[0]->{pass};
+	my($fire) = $p[7] || $p[0]->{fire};
+	my($socks) = $p[8] || $p[0]->{socks};
+	if ($p[1])			{&_ArchBFile($p[1],'----')	} else {&_ArchError('m','dObj')}
+	if ($p[2])			{&_ArchBText($p[2],'FTPc')	}
+	if (defined $p[3])	{&_ArchBBool($p[3],'ArGB')	}
+	if ($host)			{&_ArchBText($host,'FTPh')	}
+	if ($user)			{&_ArchBText($user,'ArGU')	}
+	if ($pass)			{&_ArchBText($pass,'ArGp')	}
+	if ($fire)			{&_ArchBText($fire,'ArGF')	}
+	if ($socks)			{&_ArchBText($socks,'ArGS')	}
+	return &_ArchAeProcess($p[0])
+}
+#-----------------------------------------------------------------
+sub storeURL {
+	my(@p)	= @_;
+	$be		= &_ArchAeBuild($p[0],'Stor');
+	my($fire) = $p[4] || $p[0]->{fire};
+	my($socks) = $p[5] || $p[0]->{socks};
+	if ($p[1])			{&_ArchBFile($p[1],'----')	} else {&_ArchError('m','dObj')}
+	if ($p[2])			{&_ArchBText($p[2],'ArUR')	}
+	if (defined $p[3])	{&_ArchBBool($p[3],'ArGB')	}
+	if ($fire)			{&_ArchBText($fire,'ArGF')	}
+	if ($socks)			{&_ArchBText($socks,'ArGS')	}
+	return &_ArchAeProcess($p[0])
+}
+#-----------------------------------------------------------------
+sub rename {
+	my(@p)	= @_;
+	$be		= &_ArchAeBuild($p[0],'Rena');
+	my($host) = $p[3] || $p[0]->{host};
+	my($user) = $p[4] || $p[0]->{user};
+	my($pass) = $p[5] || $p[0]->{pass};
+	my($fire) = $p[6] || $p[0]->{fire};
+	my($socks) = $p[7] || $p[0]->{socks};
+	if ($p[1])			{&_ArchBText($p[1],'NewN')	} else {&_ArchError('m','NewN')}
+	if ($p[2])			{&_ArchBText($p[2],'FTPc')	}
+	if ($host)			{&_ArchBText($host,'FTPh')	}
+	if ($user)			{&_ArchBText($user,'ArGU')	}
+	if ($pass)			{&_ArchBText($pass,'ArGp')	}
+	if ($fire)			{&_ArchBText($fire,'ArGF')	}
+	if ($socks)			{&_ArchBText($socks,'ArGS')	}
+	return &_ArchAeProcess($p[0])
+}
+#-----------------------------------------------------------------
+sub renameURL {
+	my(@p)	= @_;
+	$be		= &_ArchAeBuild($p[0],'Rena');
+	my($fire) = $p[3] || $p[0]->{fire};
+	my($socks) = $p[4] || $p[0]->{socks};
+	if ($p[1])			{&_ArchBText($p[1],'NewN')	} else {&_ArchError('m','NewN')}
+	if ($p[2])			{&_ArchBText($p[2],'ArUR')	}
+	if ($fire)			{&_ArchBText($fire,'ArGF')	}
+	if ($socks)			{&_ArchBText($socks,'ArGS')	}
+	return &_ArchAeProcess($p[0])
+}
+#-----------------------------------------------------------------

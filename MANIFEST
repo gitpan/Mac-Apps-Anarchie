@@ -1,5 +1,7 @@
-Anarchie-2.1-AE.txt         AppleEvent information (from Frontier)
-anarchie.pl                 Test soubroutines
-Anarchie.pm                 Module / documentation
-MANIFEST                    This file
-README                      Readme file
+Anarchie-2.1-AE.txt
+anarchie.pl
+lib/Mac/Apps/Anarchie.pm
+Makefile.PL
+MANIFEST
+README
+test.pl

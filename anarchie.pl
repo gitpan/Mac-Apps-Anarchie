@@ -16,7 +16,7 @@ $file4	= $dsktp.'newfile:';
 $url	= "ftp://$user:$pass\@$host/$file";
 
 use Mac::Apps::Anarchie;
-$ftp = new Anarchie;
+$ftp = new Mac::Apps::Anarchie;
 #un-comment to use Fetch instead of Archie
 #$ftp->useagent('FTCh');
 $ftp->switchapp(1,'R*ch');
